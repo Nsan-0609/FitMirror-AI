@@ -119,19 +119,25 @@ export async function POST(request: Request) {
 
     const result = await response.json();
 
-    if (!response.ok) {
-      return Response.json(
-        {
-          ok: false,
-          error: result?.error?.message || "Gemini image generation failed.",
-          message:
-            "AI試着画像の生成に失敗しました。APIキー、モデル名、画像サイズを確認してください。",
-          advice,
-          raw: result,
-        },
-        { status: 500 }
-      );
-    }
+   if (!response.ok) {
+  const geminiError =
+    result?.error?.message ||
+    result?.error?.status ||
+    "Gemini image generation failed.";
+
+  console.error("Gemini API Error:", JSON.stringify(result, null, 2));
+
+  return Response.json(
+    {
+      ok: false,
+      error: geminiError,
+      message: `AI試着画像の生成に失敗しました。原因：${geminiError}`,
+      advice,
+      raw: result,
+    },
+    { status: 500 }
+  );
+}
 
     const parts = result?.candidates?.[0]?.content?.parts || [];
     const imagePart = parts.find((part: any) => part.inlineData || part.inline_data);
